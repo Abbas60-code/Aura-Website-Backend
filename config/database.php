@@ -58,9 +58,17 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') ? array_filter(array_merge(
+                [
+                    // 1002 = MYSQL_ATTR_CONNECT_TIMEOUT (numeric for PHP builds where constant is missing)
+                    1002 => (int) env('DB_CONNECT_TIMEOUT', 30),
+                    // 1014 = MYSQL_ATTR_SSL_VERIFY_SERVER_CERT
+                    1014 => filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT', false), FILTER_VALIDATE_BOOLEAN),
+                ],
+                env('MYSQL_ATTR_SSL_CA') ? [
+                    (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                ] : []
+            )) : [],
         ],
 
         'mariadb' => [
